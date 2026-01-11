@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "WebSearch",
+      "Bash(echo:*)",
+      "Bash(unzip:*)",
+      "Bash(xxd:*)"
+    ]
+  }
+}
