@@ -29,23 +29,25 @@ This document outlines the migration of HydraLab's iOS device management from `t
 
 ## Command Mapping
 
+**⚠️ IMPORTANT: All pymobiledevice3 commands verified on iPhone 11 Pro (iOS 26.2) - See PYMOBILEDEVICE3_COMMAND_VERIFICATION.md**
+
 ### Core Commands
 
-| tidevice Command | pymobiledevice3 Equivalent | Notes |
-|-----------------|----------------------------|-------|
-| `tidevice list --json` | `python3 -m pymobiledevice3 usbmux list --json` | Device listing |
-| `tidevice -u <udid> info --json` | `python3 -m pymobiledevice3 lockdown info -u <udid> --json` | Device details |
-| `tidevice -u <udid> screenshot <path>` | `python3 -m pymobiledevice3 developer dvt screenshot -u <udid> <path>` | Screenshot |
-| `tidevice -u <udid> applist` | `python3 -m pymobiledevice3 apps list -u <udid>` | List apps |
-| `tidevice -u <udid> install <path>` | `python3 -m pymobiledevice3 apps install -u <udid> <path>` | Install app |
-| `tidevice -u <udid> uninstall <bundle>` | `python3 -m pymobiledevice3 apps uninstall -u <udid> <bundle>` | Uninstall app |
-| `tidevice -u <udid> launch <bundle>` | `python3 -m pymobiledevice3 developer dvt launch -u <udid> <bundle>` | Launch app |
-| `tidevice -u <udid> kill <bundle>` | `python3 -m pymobiledevice3 developer dvt kill -u <udid> <bundle>` | Stop app |
-| `tidevice -u <udid> syslog` | `python3 -m pymobiledevice3 syslog live -u <udid>` | System logs |
-| `tidevice -u <udid> crashreport <folder>` | `python3 -m pymobiledevice3 crash pull -u <udid> <folder>` | Crash reports |
-| `tidevice -u <udid> relay <port1> <port2>` | `python3 -m pymobiledevice3 remote start-tunnel -u <udid> <port1>:<port2>` | Port relay |
-| `tidevice -u <udid> xctest --bundle_id <id>` | `python3 -m pymobiledevice3 developer dvt launch -u <udid> <id>` | XCTest launch |
-| `tidevice watch` | `python3 -m pymobiledevice3 usbmux watch` | Device watcher |
+| tidevice Command | pymobiledevice3 Equivalent | Status | Notes |
+|-----------------|----------------------------|--------|-------|
+| `tidevice list --json` | `python3 -m pymobiledevice3 usbmux list` | ✅ | Returns JSON by default, no `--json` flag needed |
+| `tidevice -u <udid> info --json` | `python3 -m pymobiledevice3 lockdown info --udid <udid>` | ✅ | **Changed: `--udid` not `-u`, no `--json` flag** |
+| `tidevice -u <udid> screenshot <path>` | `python3 -m pymobiledevice3 developer dvt screenshot --udid <udid> <path>` | ✅ | **Changed: `--udid` not `-u`** |
+| `tidevice -u <udid> applist` | `python3 -m pymobiledevice3 apps list --udid <udid>` | ✅ | **Changed: `--udid` not `-u`** |
+| `tidevice -u <udid> install <path>` | `python3 -m pymobiledevice3 apps install --udid <udid> <path>` | ✅ | **Changed: `--udid` not `-u`** |
+| `tidevice -u <udid> uninstall <bundle>` | `python3 -m pymobiledevice3 apps uninstall --udid <udid> <bundle>` | ✅ | **Changed: `--udid` not `-u`** |
+| `tidevice -u <udid> launch <bundle>` | `python3 -m pymobiledevice3 developer dvt launch --udid <udid> <bundle>` | ✅ | **Changed: `--udid` not `-u`** |
+| `tidevice -u <udid> kill <bundle>` | `python3 -m pymobiledevice3 developer dvt kill --udid <udid> <PID>` | ⚠️ | **BREAKING: Requires PID not bundle. Use launch `--kill-existing` instead** |
+| `tidevice -u <udid> syslog` | `python3 -m pymobiledevice3 syslog live --udid <udid>` | ✅ | **Changed: `--udid` not `-u`, added `live` subcommand** |
+| `tidevice -u <udid> crashreport <folder>` | `python3 -m pymobiledevice3 crash pull --udid <udid> <folder>` | ✅ | **Changed: `--udid` not `-u`, `pull` subcommand** |
+| `tidevice -u <udid> relay <port1> <port2>` | `python3 -m pymobiledevice3 usbmux forward --udid <udid> <port1> <port2>` | ✅ | **Changed: Use `usbmux forward` not `remote start-tunnel`** |
+| `tidevice -u <udid> xctest --bundle_id <id>` | `python3 -m pymobiledevice3 developer dvt launch --udid <udid> <id>` | ✅ | **Changed: `--udid` not `-u`** |
+| `tidevice watch` | ❌ **NOT AVAILABLE** | ❌ | **Need polling mechanism - `usbmux watch` doesn't exist** |
 
 ### Output Format Differences
 
@@ -62,14 +64,18 @@ This document outlines the migration of HydraLab's iOS device management from `t
 **pymobiledevice3 usbmux list:**
 ```json
 [{
+  "BuildVersion": "23C55",
   "ConnectionType": "USB",
-  "DeviceID": 1,
-  "SerialNumber": "00008030-0005743926A0802E",
-  "Identifier": "00008030-0005743926A0802E"
+  "DeviceClass": "iPhone",
+  "DeviceName": "Abhi",
+  "Identifier": "00008030-0005743926A0802E",
+  "ProductType": "iPhone12,3",
+  "ProductVersion": "26.2",
+  "UniqueDeviceID": "00008030-0005743926A0802E"
 }]
 ```
 
-**Note:** pymobiledevice3 requires additional `lockdown info` call to get device details.
+**Note:** ✅ Verified output includes complete device info. Additional `lockdown info` call optional for extended details (100+ properties).
 
 ---
 
@@ -157,13 +163,14 @@ String command = "tidevice list --json";
 
 **New (pymobiledevice3):**
 ```java
-// Step 1: List devices
+// Step 1: List devices (includes device info)
 String command = "python3 -m pymobiledevice3 usbmux list";
-// Returns: [{"SerialNumber": "xxx", "ConnectionType": "USB"}]
+// Returns: [{"Identifier": "xxx", "DeviceName": "iPhone", "ProductVersion": "26.2", ...}]
 
-// Step 2: Get device info for each
-String infoCommand = "python3 -m pymobiledevice3 lockdown info -u " + udid + " --json";
-// Returns: {"DeviceName": "iPhone", "ProductVersion": "18.2", ...}
+// Optional Step 2: Get extended device info (100+ properties)
+String infoCommand = "python3 -m pymobiledevice3 lockdown info --udid " + udid;
+// Returns: {"DeviceName": "iPhone", "ProductVersion": "26.2", "SerialNumber": "xxx", ...}
+// NOTE: Use --udid not -u, no --json flag needed (returns JSON by default)
 ```
 
 ### Screenshot Capture
@@ -175,7 +182,9 @@ String command = "tidevice -u " + udid + " screenshot \"" + path + "\"";
 
 **New (pymobiledevice3):**
 ```java
-String command = "python3 -m pymobiledevice3 developer dvt screenshot -u " + udid + " \"" + path + "\"";
+// ✅ VERIFIED - use --udid not -u
+String command = "python3 -m pymobiledevice3 developer dvt screenshot --udid " + udid + " \"" + path + "\"";
+// Note: May log "InvalidServiceError, trying tunneld" warning - this is normal and works fine
 ```
 
 ### Device Watch/Monitor
@@ -187,7 +196,15 @@ Process process = Runtime.getRuntime().exec("tidevice watch");
 
 **New (pymobiledevice3):**
 ```java
-Process process = Runtime.getRuntime().exec("python3 -m pymobiledevice3 usbmux watch");
+// ❌ CRITICAL: 'usbmux watch' does NOT exist
+// Alternative 1: Polling mechanism
+ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+scheduler.scheduleAtFixedRate(() -> {
+    String command = "python3 -m pymobiledevice3 usbmux list";
+    // Poll for device changes
+}, 0, 5, TimeUnit.SECONDS);
+
+// Alternative 2: Use system-level device monitoring (MacOS FSEvents, Linux udev)
 ```
 
 ### Port Relay (WDA Proxy)
@@ -198,6 +215,10 @@ String command = "tidevice -u " + udid + " relay " + localPort + " " + devicePor
 ```
 
 **New (pymobiledevice3):**
+```java
+// ✅ VERIFIED - use --udid and usbmux forward
+String command = "python3 -m pymobiledevice3 usbmux forward --udid " + udid + " " + localPort + " " + devicePort;
+```
 ```java
 String command = "python3 -m pymobiledevice3 remote start-tunnel -u " + udid + " " + localPort + ":" + devicePort;
 ```
