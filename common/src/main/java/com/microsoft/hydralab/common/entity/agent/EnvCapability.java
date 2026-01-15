@@ -26,7 +26,7 @@ public class EnvCapability {
         npm("--version"),
         git("--version"),
         tidevice("-v"),
-        pymobiledevice3("--version"),
+        pymobiledevice3("-h"),  // pymobiledevice3 uses -h or --help instead of --version
         // maven("--version"),
         gradle("--version"),
         // xcode("--version"),

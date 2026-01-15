@@ -74,3 +74,9 @@ env.properties
 /common/src/test/resources/.DS_Store
 
 /hercules/config.json
+/hydralab_test_package
+/result_dir.xcresult
+/Debug-Prod-iphoneos
+Debug-Prod_Debug-Prod_iphoneos26.0-arm64.xctestrun
+/hydralab_test_results.xcresult
+result_dir

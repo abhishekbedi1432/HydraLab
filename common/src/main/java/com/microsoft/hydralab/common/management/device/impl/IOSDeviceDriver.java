@@ -97,7 +97,16 @@ public class IOSDeviceDriver extends AbstractDeviceDriver {
     @Override
     public void unlockDevice(@NotNull DeviceInfo deviceInfo, @Nullable Logger logger) {
         classLogger.info("Unlocking may not work as expected, please keep your device wake.");
-        getAppiumServerManager().getIOSDriver(deviceInfo, logger).unlockDevice();
+        try {
+            getAppiumServerManager().getIOSDriver(deviceInfo, logger).unlockDevice();
+        } catch (Exception e) {
+            // Unlock via Appium is optional for XCTest execution (uses xcodebuild command)
+            // Log the error but don't fail the test run
+            classLogger.warn("Failed to unlock device via Appium (this is non-fatal for XCTest): " + e.getMessage());
+            if (logger != null) {
+                logger.warn("Device unlock via Appium failed but test can proceed with XCTest. Error: " + e.getMessage());
+            }
+        }
     }
 
     @Override

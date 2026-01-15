@@ -89,8 +89,8 @@ public class IOSUtils {
         if (isWdaRunningByPort(wdaPort, logger)) {
             return;
         }
-        // String command = "python3 -m pymobiledevice3 usbmux forward --udid " + udid + " " + wdaPort + " 8100";
-        String portRelayCommand = "python3 -m pymobiledevice3 usbmux forward --udid " + udid + " " + wdaPort + " 8100";
+        // Note: usbmux forward uses --serial, not --udid
+        String portRelayCommand = "python3 -m pymobiledevice3 usbmux forward --serial " + udid + " " + wdaPort + " 8100";
         String startWDACommand = "python3 -m pymobiledevice3 developer dvt launch --udid " + udid + " " + WDA_BUNDLE_ID;
 
         deviceInfo.addCurrentProcess(ShellUtils.execLocalCommand(portRelayCommand, false, logger));
@@ -103,9 +103,9 @@ public class IOSUtils {
     public static void killProxyWDA(DeviceInfo deviceInfo, Logger logger) {
         String udid = deviceInfo.getSerialNum();
         int wdaPort = getWdaPortByUdid(udid, logger);
-        // String command = "python3 -m pymobiledevice3 usbmux forward --udid " + udid + " " + wdaPort + " 8100";
+        // Note: usbmux forward uses --serial, not --udid
         // We can still try to kill the process even the proxy is not running.
-        String portRelayCommand = "python3 -m pymobiledevice3 usbmux forward --udid " + udid + " " + wdaPort + " 8100";
+        String portRelayCommand = "python3 -m pymobiledevice3 usbmux forward --serial " + udid + " " + wdaPort + " 8100";
         String startWDACommand = "python3 -m pymobiledevice3 developer dvt launch --udid " + udid + " " + WDA_BUNDLE_ID;
 
         ShellUtils.killProcessByCommandStr(portRelayCommand, logger);
@@ -148,7 +148,8 @@ public class IOSUtils {
             // Randomly assign a port
             int mjpegServerPor = generateRandomPort(classLogger);
             classLogger.info("Generate a new mjpeg port = " + mjpegServerPor);
-            Process process = ShellUtils.execLocalCommand("python3 -m pymobiledevice3 usbmux forward --udid " + serialNum + " " + mjpegServerPor + " 9100", false, classLogger);
+            // Note: usbmux forward uses --serial, not --udid
+            Process process = ShellUtils.execLocalCommand("python3 -m pymobiledevice3 usbmux forward --serial " + serialNum + " " + mjpegServerPor + " 9100", false, classLogger);
             deviceInfo.addCurrentProcess(process);
             mjpegServerPortMap.put(serialNum, mjpegServerPor);
         }
@@ -159,7 +160,8 @@ public class IOSUtils {
     public static void releaseMjpegServerPortByUdid(String serialNum, Logger classLogger) {
         if (mjpegServerPortMap.containsKey(serialNum)) {
             int mjpegServerPor = mjpegServerPortMap.get(serialNum);
-            ShellUtils.killProcessByCommandStr("python3 -m pymobiledevice3 usbmux forward --udid " + serialNum + " " + mjpegServerPor + " 9100", classLogger);
+            // Note: usbmux forward uses --serial, not --udid
+            ShellUtils.killProcessByCommandStr("python3 -m pymobiledevice3 usbmux forward --serial " + serialNum + " " + mjpegServerPor + " 9100", classLogger);
             mjpegServerPortMap.remove(serialNum, mjpegServerPor);
         }
     }
