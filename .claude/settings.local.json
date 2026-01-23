@@ -5,7 +5,10 @@
       "WebSearch",
       "Bash(echo:*)",
       "Bash(unzip:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(appium driver doctor:*)"
     ]
   }
 }

@@ -5,7 +5,6 @@ import com.microsoft.hydralab.center.test.BaseTest;
 import com.microsoft.hydralab.common.entity.common.AgentUser;
 import com.microsoft.hydralab.common.entity.common.BlockedDeviceInfo;
 import com.microsoft.hydralab.common.entity.common.Message;
-import com.microsoft.hydralab.common.file.StorageServiceClientProxy;
 import com.microsoft.hydralab.common.file.impl.local.LocalStorageClientAdapter;
 import com.microsoft.hydralab.common.file.impl.local.LocalStorageProperty;
 import com.microsoft.hydralab.common.repository.BlockedDeviceInfoRepository;
@@ -13,8 +12,6 @@ import com.microsoft.hydralab.common.util.Const;
 import com.microsoft.hydralab.common.util.SerializeUtil;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.ApplicationContext;
 
 import javax.annotation.Resource;
 import javax.websocket.RemoteEndpoint;
@@ -23,7 +20,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.mockito.BDDMockito.given;
@@ -41,7 +37,7 @@ public class DeviceAgentManagementServiceTest extends BaseTest {
     private final ConcurrentHashMap<String, BlockedDeviceInfo> blockedDevicesMap = new ConcurrentHashMap<>();
 
     @Test
-    public void testOnMessage_NoException() throws IOException {
+    public void testOnMessageNoException() throws IOException {
         Session session = Mockito.mock(Session.class);
         RemoteEndpoint.Basic basicRemote = Mockito.mock(RemoteEndpoint.Basic.class);
         Mockito.when(session.getId()).thenReturn("123456");
