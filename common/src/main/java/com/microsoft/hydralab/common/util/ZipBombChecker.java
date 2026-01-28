@@ -11,8 +11,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class ZipBombChecker {
-    private static final long MAX_UNCOMPRESSED_SIZE = 1024 * 1024 * 1024; // 1024 MB
-    private static final int MAX_ENTRIES = 10000;
+    // Increased limit to 10GB to support large game/app builds
+    private static final long MAX_UNCOMPRESSED_SIZE = 10L * 1024 * 1024 * 1024;
+    private static final int MAX_ENTRIES = 100000;
     private static final int MAX_NESTING_DEPTH = 5;
 
     public static boolean isZipBomb(File file) {
@@ -38,22 +39,38 @@ public class ZipBombChecker {
                 }
 
                 if (!entry.isDirectory()) {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    int read;
-                    while ((read = zis.read(buffer)) != -1) {
-                        baos.write(buffer, 0, read);
-                        totalUncompressedSize += read;
+                    // Check if the entry is a nested zip file
+                    boolean isNestedZip = entry.getName().toLowerCase().endsWith(".zip");
+                    
+                    File tempZip = null;
+                    FileOutputStream fos = null;
+                    
+                    if (isNestedZip) {
+                        tempZip = File.createTempFile("nested", ".zip");
+                        fos = new FileOutputStream(tempZip);
+                    }
+
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        totalUncompressedSize += len;
                         if (totalUncompressedSize > MAX_UNCOMPRESSED_SIZE) {
+                            if (fos != null) {
+                                fos.close();
+                            }
+                            if (tempZip != null) {
+                                tempZip.delete();
+                            }
                             return true;
                         }
-                    }
-                    // check if the entry is a nested zip file
-                    if (entry.getName().toLowerCase().endsWith(".zip")) {
-                        byte[] nestedZipBytes = baos.toByteArray();
-                        File tempZip = File.createTempFile("nested", ".zip");
-                        try (FileOutputStream fos = new FileOutputStream(tempZip)) {
-                            fos.write(nestedZipBytes);
+                        
+                        // Only write to disk if it's a nested zip we need to check recursively
+                        if (fos != null) {
+                            fos.write(buffer, 0, len);
                         }
+                    }
+                    
+                    if (fos != null) {
+                        fos.close();
                         boolean nestedBomb = isZipBomb(tempZip, depth + 1);
                         tempZip.delete();
                         if (nestedBomb) {
@@ -64,7 +81,8 @@ public class ZipBombChecker {
                 zis.closeEntry();
             }
         } catch (Exception e) {
-            return true; // If there's an error reading the zip, treat it as a potential zip bomb
+            // If there's an error reading the zip (e.g. malformed), treat as potential threat
+            return true;
         }
         return false;
     }
